@@ -69,7 +69,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user (UID 1000 matches typical Android app)
-RUN useradd -m -u 1000 -s /bin/bash botix \
+# Remove existing ubuntu user if present (UID 1000 in base image)
+RUN if id "ubuntu" &>/dev/null; then userdel -r ubuntu; fi \
+    && useradd -m -u 1000 -s /bin/bash botix \
     && echo "botix ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/botix
 
 # Set up locale
