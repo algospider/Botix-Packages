@@ -1,4 +1,4 @@
-name: Build Ubuntu Rootfs
+name: Build Ubuntu Rootfs (ARM64)
 
 on:
   workflow_dispatch:
@@ -13,20 +13,8 @@ permissions:
 
 jobs:
   build:
-    name: Build rootfs for ${{ matrix.arch }}
+    name: Build rootfs for ARM64
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - arch: amd64
-            platform: linux/amd64
-            artifact: ubuntu-base-24.04.3-dev-amd64.tar.gz
-          - arch: arm64
-            platform: linux/arm64
-            artifact: ubuntu-base-24.04.3-dev-arm64.tar.gz
-          - arch: armhf
-            platform: linux/arm/v7
-            artifact: ubuntu-base-24.04.3-dev-armhf.tar.gz
 
     steps:
       - name: Checkout
@@ -39,25 +27,25 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./scripts/Dockerfile.rootfs
-          platforms: ${{ matrix.platform }}
+          file: ./Dockerfile.rootfs
+          platforms: linux/arm64
           load: true
-          tags: botix-rootfs:${{ matrix.arch }}
+          tags: botix-rootfs:arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Export rootfs tarball
         run: |
-          CID=$(docker create --platform ${{ matrix.platform }} botix-rootfs:${{ matrix.arch }})
-          docker export $CID | gzip > ${{ matrix.artifact }}
+          CID=$(docker create --platform linux/arm64 botix-rootfs:arm64)
+          docker export $CID | gzip > ubuntu-base-24.04.3-dev-arm64.tar.gz
           docker rm $CID
-          echo "Created ${{ matrix.artifact }} ($(du -h ${{ matrix.artifact }} | cut -f1))"
+          echo "Created ubuntu-base-24.04.3-dev-arm64.tar.gz ($(du -h ubuntu-base-24.04.3-dev-arm64.tar.gz | cut -f1))"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rootfs-${{ matrix.arch }}
-          path: ${{ matrix.artifact }}
+          name: rootfs-arm64
+          path: ubuntu-base-24.04.3-dev-arm64.tar.gz
 
   release:
     name: Create GitHub Release
@@ -65,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - name: Download all artifacts
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
@@ -77,9 +65,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
-          name: Ubuntu 24.04 Dev Rootfs
+          name: Ubuntu 24.04 Dev Rootfs (ARM64)
           body: |
-            Pre-built Ubuntu 24.04 rootfs with development tools for Botix terminal.
+            Pre-built Ubuntu 24.04 rootfs with development tools for Botix terminal (ARM64).
             
             **Included packages:**
             - Build tools: build-essential, cmake, pkg-config, libssl-dev
@@ -88,8 +76,6 @@ jobs:
             - Utilities: curl, wget, jq, tree, htop, vim, nano, tmux, screen
             - Modern CLI tools: ripgrep, fd-find, bat, eza
           files: |
-            ./artifacts/rootfs-amd64/ubuntu-base-24.04.3-dev-amd64.tar.gz
-            ./artifacts/rootfs-arm64/ubuntu-base-24.04.3-dev-arm64.tar.gz
-            ./artifacts/rootfs-armhf/ubuntu-base-24.04.3-dev-armhf.tar.gz
+            ./artifacts/ubuntu-base-24.04.3-dev-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
