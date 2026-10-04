@@ -76,6 +76,6 @@ jobs:
             - Utilities: curl, wget, jq, tree, htop, vim, nano, tmux, screen
             - Modern CLI tools: ripgrep, fd-find, bat, eza
           files: |
-            ./artifacts/ubuntu-base-24.04.3-dev-arm64.tar.gz
+            ./artifacts/rootfs-arm64/ubuntu-base-24.04.3-dev-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
